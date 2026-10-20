@@ -45,5 +45,9 @@
     "installConfidence": "high",
     "verification": "verified",
     "toolsCount": 8
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
   }
 }
