@@ -12,6 +12,13 @@
   "bugs": {
     "url": "https://github.com/stand-out-of-my-sun/diogenes-agent-guardrails-mcp/issues"
   },
+  "main": "index.js",
+  "bin": {
+    "diogenes-agent-guardrails-mcp": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
   "keywords": [
     "mcp",
     "mcp-server",
