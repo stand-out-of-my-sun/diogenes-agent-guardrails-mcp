@@ -1,0 +1,23 @@
+{
+  "profile_id": "github-stand-out-of-my-sun-diogenes-agent-guardrails-mcp-4ed1e9aa",
+  "server": "stand-out-of-my-sun/diogenes-agent-guardrails-mcp",
+  "maintainer": "@stand-out-of-my-sun",
+  "category": "Security",
+  "transport": "streamable-http",
+  "endpoint": "https://diogenes-micro-gateway.corinth.workers.dev/mcp/agent-guardrails",
+  "health_endpoint": "https://diogenes-micro-gateway.corinth.workers.dev/api/v1/health",
+  "docs_url": "https://diogenes-micro-gateway.corinth.workers.dev/#agent-guardrails",
+  "support_url": "https://github.com/stand-out-of-my-sun/diogenes-agent-guardrails-mcp/issues",
+  "auth": "none",
+  "install_confidence": "high",
+  "install_command": "npx -y mcp-remote https://diogenes-micro-gateway.corinth.workers.dev/mcp/agent-guardrails",
+  "license": "MIT",
+  "verification": "verified",
+  "capabilities": {
+    "mcp_tools_count": 12
+  },
+  "badges": {
+    "tensorblock_svg": "https://mcp-index.tensorblock.co/v1/servers/github-stand-out-of-my-sun-diogenes-agent-guardrails-mcp-4ed1e9aa/badge.svg",
+    "tensorblock_profile": "https://www.tensorblock.co/mcp/servers/github-stand-out-of-my-sun-diogenes-agent-guardrails-mcp-4ed1e9aa?client=cursor"
+  }
+}
