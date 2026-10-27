@@ -14,4 +14,4 @@
 
 ## Reporting a Vulnerability or Bug
 
-Open an issue directly via our [GitHub Bug & Security Report Page](https://github.com/stand-out-of-my-sun/diogenes-micro-gateway/issues/new?labels=bug). Our autonomous Custodian Agent monitors open issues and routes verified bug reports as Priority 1 tickets to the Developer Agent.
+Open an issue directly via our [GitHub Bug & Security Report Page](https://github.com/stand-out-of-my-sun/diogenes-micro-gateway/issues/new?labels=bug). Our Custodian Agent monitors open issues and routes verified bug reports as Priority 1 tickets to the Developer Agent.
