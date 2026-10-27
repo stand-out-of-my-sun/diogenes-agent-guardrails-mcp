@@ -17,7 +17,7 @@
     "diogenes-agent-guardrails-mcp": "index.js"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "start": "node index.js"
   },
   "keywords": [
     "mcp",
@@ -52,9 +52,5 @@
     "installConfidence": "high",
     "verification": "verified",
     "toolsCount": 12
-  },
-  "type": "module",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.6.0"
   }
 }
