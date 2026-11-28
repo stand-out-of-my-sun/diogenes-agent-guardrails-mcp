@@ -2,7 +2,7 @@
 /**
  * Diogenes Agent Guardrails & Command Sandbox MCP
  * Zero-dependency stdio MCP bridge with instant local tools/list resolution
- * and autonomous L402 / HTTP 402 micro-payment challenge interception.
+ * and L402 / HTTP 402 micro-payment challenge interception.
  */
 
 const fs = require("fs");
@@ -10,7 +10,7 @@ const path = require("path");
 const readline = require("readline");
 const childProcess = require("child_process");
 
-const DEFAULT_GATEWAY_URL = "https://diogenes-micro-gateway.corinth.workers.dev/mcp/agent-guardrails";
+const DEFAULT_GATEWAY_URL = "https://diogenesgateway.com/mcp/agent-guardrails";
 const GATEWAY_URL = process.env.DIOGENES_GATEWAY_URL || DEFAULT_GATEWAY_URL;
 
 // Load local tools manifest for instantaneous zero-latency discovery
@@ -52,6 +52,26 @@ async function executeWithPayment(req) {
   }
   if (process.env.DIOGENES_X402_SIGNATURE) {
     baseHeaders["X-Payment-Signature"] = process.env.DIOGENES_X402_SIGNATURE.trim();
+  }
+  if (process.env.DIOGENES_GRLC_TXHASH) {
+    baseHeaders["X-Garlicoin-TxHash"] = process.env.DIOGENES_GRLC_TXHASH.trim();
+  }
+  if (process.env.DIOGENES_GRLC_PAYER_ADDRESS) {
+    baseHeaders["X-Garlicoin-Payer-Address"] = process.env.DIOGENES_GRLC_PAYER_ADDRESS.trim();
+  }
+  const sessionKey = process.env.DIOGENES_SESSION_KEY || process.env.DIOGENES_GRLC_SESSION_KEY || process.env.DIOGENES_API_KEY;
+  if (sessionKey && !baseHeaders["Authorization"]) {
+    const sk = sessionKey.trim();
+    baseHeaders["Authorization"] = sk.toLowerCase().startsWith("bearer ") ? sk : `Bearer ${sk}`;
+  }
+  if (process.env.DIOGENES_BASE_TXHASH) {
+    baseHeaders["X-Payment-TxHash"] = process.env.DIOGENES_BASE_TXHASH.trim();
+  }
+  if (process.env.DIOGENES_WGRLC_TXHASH || process.env.DIOGENES_BSC_TXHASH) {
+    baseHeaders["X-BSC-TxHash"] = (process.env.DIOGENES_WGRLC_TXHASH || process.env.DIOGENES_BSC_TXHASH).trim();
+  }
+  if (process.env.DIOGENES_GRLC_TXID && !baseHeaders["X-Garlicoin-TxHash"]) {
+    baseHeaders["X-Garlicoin-TxHash"] = process.env.DIOGENES_GRLC_TXID.trim();
   }
 
   async function sendReq(url, headers, bodyObj) {
@@ -129,10 +149,12 @@ async function executeWithPayment(req) {
       }
     }
 
-    // 2. Auto-settle via local CLI command
-    if (!paidPreimage && process.env.DIOGENES_LN_PAY_CMD && invoice) {
+    // 2. Auto-settle via local CLI command (Strict BOLT11 Bech32 validation prevents shell injection)
+    const SAFE_BOLT11_REGEX = /^(?:lightning:)?ln(?:bc|tb|bcrt|sb)[0-9a-z]{20,2048}$/i;
+    if (!paidPreimage && process.env.DIOGENES_LN_PAY_CMD && invoice && SAFE_BOLT11_REGEX.test(invoice.trim())) {
       try {
-        const cmd = process.env.DIOGENES_LN_PAY_CMD.replace(/%INVOICE%/g, invoice);
+        const safeInvoice = invoice.trim().replace(/^lightning:/i, "");
+        const cmd = process.env.DIOGENES_LN_PAY_CMD.replace(/%INVOICE%/g, safeInvoice);
         const stdout = childProcess.execSync(cmd, { encoding: "utf-8", timeout: 15000 });
         const match = stdout.match(/\b([a-f0-9]{64})\b/i);
         if (match) {
@@ -192,18 +214,79 @@ async function executeWithPayment(req) {
     };
   }
 
+  const rawBodyText = await res.text();
+  let parsedRpc = null;
   try {
-    return await res.json();
+    parsedRpc = JSON.parse(rawBodyText);
   } catch (e) {
-    const txt = await res.text();
     return {
       jsonrpc: "2.0",
       id: req.id,
       result: {
-        content: [{ type: "text", text: txt }]
+        content: [{ type: "text", text: rawBodyText }]
       }
     };
   }
+
+  // Intercept MCP JSON-RPC 200 in-band 402 Payment Challenge for zero-click auto-settlement
+  const inBandChallenge = parsedRpc?.result?.payment_challenge ||
+    (parsedRpc?.result?.error_code === 402 ? parsedRpc.result : null);
+  const l402Option = inBandChallenge?.rail_options?.lightning_l402;
+  if (l402Option && (process.env.DIOGENES_COINOS_TOKEN || process.env.DIOGENES_LN_PAY_CMD)) {
+    const invoice = l402Option.bolt11_invoice || "";
+    const macaroon = l402Option.macaroon || "";
+    let paidPreimage = null;
+
+    if (process.env.DIOGENES_COINOS_TOKEN && invoice) {
+      try {
+        const coinosRes = await fetch("https://coinos.io/api/lightning/send", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.DIOGENES_COINOS_TOKEN.trim()}`
+          },
+          body: JSON.stringify({ invoice: invoice })
+        });
+        if (coinosRes.ok) {
+          const coinosData = await coinosRes.json();
+          paidPreimage = coinosData.preimage || coinosData.payment_preimage || coinosData.hash || null;
+        }
+      } catch (e) {}
+    }
+
+    const SAFE_BOLT11_REGEX = /^(?:lightning:)?ln(?:bc|tb|bcrt|sb)[0-9a-z]{20,2048}$/i;
+    if (!paidPreimage && process.env.DIOGENES_LN_PAY_CMD && invoice && SAFE_BOLT11_REGEX.test(invoice.trim())) {
+      try {
+        const safeInvoice = invoice.trim().replace(/^lightning:/i, "");
+        const cmd = process.env.DIOGENES_LN_PAY_CMD.replace(/%INVOICE%/g, safeInvoice);
+        const stdout = childProcess.execSync(cmd, { encoding: "utf-8", timeout: 15000 });
+        const match = stdout.match(/\b([a-f0-9]{64})\b/i);
+        if (match) paidPreimage = match[1];
+      } catch (e) {}
+    }
+
+    if (paidPreimage) {
+      const retryHeaders = {
+        ...baseHeaders,
+        "Authorization": `L402 ${macaroon ? macaroon + ":" : ""}${paidPreimage}`
+      };
+      const retryReq = JSON.parse(JSON.stringify(req));
+      if (retryReq.params && typeof retryReq.params === "object") {
+        retryReq.params.arguments = {
+          ...(retryReq.params.arguments || {}),
+          payment_proof: paidPreimage
+        };
+      }
+      try {
+        const retryRes = await sendReq(targetUrl, retryHeaders, retryReq);
+        if (retryRes.ok) {
+          return await retryRes.json();
+        }
+      } catch (e) {}
+    }
+  }
+
+  return parsedRpc;
 }
 
 const rl = readline.createInterface({
@@ -250,6 +333,24 @@ rl.on("line", async (line) => {
     return;
   }
 
+  // 1b. Instant local response for ping, resources/list, and prompts/list
+  if (req.method === "ping") {
+    process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: req.id, result: {} }) + "\n");
+    return;
+  }
+  if (req.method === "resources/list") {
+    process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: req.id, result: { resources: [] } }) + "\n");
+    return;
+  }
+  if (req.method === "resources/templates/list") {
+    process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: req.id, result: { resourceTemplates: [] } }) + "\n");
+    return;
+  }
+  if (req.method === "prompts/list") {
+    process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: req.id, result: { prompts: [] } }) + "\n");
+    return;
+  }
+
   // 2. Instant local response for tools/list
   if (req.method === "tools/list" && toolsList.length > 0) {
     const toolsResp = {
@@ -264,6 +365,14 @@ rl.on("line", async (line) => {
   }
 
   // 3. Forward execution (tools/call and others) with auto-payment handling
-  const result = await executeWithPayment(req);
-  process.stdout.write(JSON.stringify(result) + "\n");
+  try {
+    const result = await executeWithPayment(req);
+    process.stdout.write(JSON.stringify(result) + "\n");
+  } catch (err) {
+    process.stdout.write(JSON.stringify({
+      jsonrpc: "2.0",
+      id: req.id !== undefined ? req.id : null,
+      error: { code: -32603, message: "Internal stdio bridge error: " + (err && err.message ? err.message : String(err)) }
+    }) + "\n");
+  }
 });
