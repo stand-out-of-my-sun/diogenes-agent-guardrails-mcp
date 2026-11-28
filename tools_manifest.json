@@ -59,7 +59,11 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
-    }
+    },
+    "free_tier": true,
+    "price_sats": 0,
+    "priceSats": 0,
+    "price_usd": 0.0
   },
   {
     "name": "validate_sql_query_ast",
@@ -121,7 +125,11 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
-    }
+    },
+    "free_tier": true,
+    "price_sats": 0,
+    "priceSats": 0,
+    "price_usd": 0.0
   },
   {
     "name": "execute_python_sandbox",
@@ -243,7 +251,11 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
-    }
+    },
+    "free_tier": true,
+    "price_sats": 0,
+    "priceSats": 0,
+    "price_usd": 0.0
   },
   {
     "name": "detect_mcp_schema_rugpull",
@@ -308,7 +320,11 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
-    }
+    },
+    "free_tier": true,
+    "price_sats": 0,
+    "priceSats": 0,
+    "price_usd": 0.0
   },
   {
     "name": "validate_mcp_sampling_request",
@@ -492,7 +508,11 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
-    }
+    },
+    "free_tier": true,
+    "price_sats": 0,
+    "priceSats": 0,
+    "price_usd": 0.0
   },
   {
     "name": "detect_agent_action_loop",
@@ -553,7 +573,11 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
-    }
+    },
+    "free_tier": true,
+    "price_sats": 0,
+    "priceSats": 0,
+    "price_usd": 0.0
   },
   {
     "name": "verify_a2a_agent_card",
@@ -614,7 +638,11 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
-    }
+    },
+    "free_tier": true,
+    "price_sats": 0,
+    "priceSats": 0,
+    "price_usd": 0.0
   },
   {
     "name": "audit_outbound_egress_url",
@@ -675,7 +703,11 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
-    }
+    },
+    "free_tier": true,
+    "price_sats": 0,
+    "priceSats": 0,
+    "price_usd": 0.0
   },
   {
     "name": "audit_response_factuality",
